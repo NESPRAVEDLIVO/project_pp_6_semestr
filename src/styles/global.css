@@ -1852,3 +1852,106 @@ h1 .highlight {
     color: #22c55e;
     font-weight: 600;
 }
+
+/* Loader & Error states */
+.dash-loading-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 18px;
+  }
+  
+  .dash-error-container {
+    flex: 1;
+    padding: 40px;
+  }
+  
+  .dash-error-btn {
+    margin-top: 20px;
+  }
+  
+  /* Page Layout Wrappers */
+  .dash-detail-wrapper {
+    flex: 1;
+    margin-left: 240px;
+    display: flex;
+  }
+  
+  .dash-detail-breadcrumb-clickable {
+    cursor: pointer;
+  }
+  
+  .dash-detail-breadcrumb-arrow {
+    color: #ccc;
+  }
+  
+  .dash-detail-breadcrumb-current {
+    color: #111;
+  }
+  
+  /* Sort Select dropdown */
+  .dash-sort-select {
+    padding: 6px 12px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    background: white;
+  }
+  
+  /* Route map tabs and container alignments */
+  .dash-route-map-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .dash-route-map-title-sub {
+    font-size: 13px;
+    color: #888;
+  }
+  
+  .dash-map-footer-action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  
+  .dash-map-footer-btn-specs {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  /* Detail Specs Components */
+  .dash-detail-specs-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  .dash-detail-desc-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  
+  .dash-detail-desc-text {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+  }
+  
+  /* Stop item placeholder dots */
+  .dash-stop-dot-transit {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    background: white;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }

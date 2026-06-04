@@ -34,11 +34,10 @@ export const MapPanel: React.FC<MapPanelProps> = ({ loadsCount, selectedLoad, on
         <div className="dash-map-footer">
           <div className="dash-map-footer-label">Selected lane</div>
           <div className="dash-map-footer-route">{selectedLoad.from} → {selectedLoad.to}</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+          <div className="dash-map-footer-action-row">
             <div className="dash-map-footer-meta">1,283 km · 2 stops</div>
             <button 
-              className="btn-primary" 
-              style={{ padding: '6px 12px', fontSize: '13px' }}
+              className="btn-primary dash-map-footer-btn-specs" 
               onClick={() => onViewDetails(selectedLoad.id)}
             >
               Open details

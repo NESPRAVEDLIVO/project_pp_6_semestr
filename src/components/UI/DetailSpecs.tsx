@@ -9,7 +9,7 @@ export const DetailSpecs: React.FC<Props> = ({ load }) => {
   return (
     <>
       <div className="detail-card">
-        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>Cargo specifications</h3>
+        <h3 className="dash-detail-specs-title">Cargo specifications</h3>
         
         <div className="specs-grid">
           <div className="spec-card">
@@ -44,8 +44,8 @@ export const DetailSpecs: React.FC<Props> = ({ load }) => {
       </div>
       
       <div className="detail-card">
-        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>Description</h3>
-        <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.6 }}>
+        <h3 className="dash-detail-desc-title">Description</h3>
+        <p className="dash-detail-desc-text">
           Standard secure transport requested. <br />
           Please ensure vehicle matches required specifications: {load.vehicle}.<br />
           Contact dispatcher upon arrival.

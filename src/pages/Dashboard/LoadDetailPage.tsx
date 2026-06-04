@@ -34,8 +34,8 @@ export const LoadDetailPage: React.FC<LoadDetailPageProps> = ({ onNavigate, load
     return (
       <div className="load-detail-page active">
         <Sidebar onNavigate={onNavigate} activePage="dashboard" />
-        <div style={{ flex: 1, marginLeft: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ color: '#888', fontSize: '18px' }}>⏳ Loading details...</div>
+        <div className="dash-loading-container">
+          <div>⏳ Loading details...</div>
         </div>
       </div>
     );
@@ -45,9 +45,9 @@ export const LoadDetailPage: React.FC<LoadDetailPageProps> = ({ onNavigate, load
     return (
       <div className="load-detail-page active">
         <Sidebar onNavigate={onNavigate} activePage="dashboard" />
-        <div style={{ flex: 1, marginLeft: '240px', padding: '40px' }}>
+        <div className="dash-error-container">
           <h2>Load not found</h2>
-          <button className="btn-primary" onClick={() => onNavigate('dashboard')} style={{ marginTop: '20px' }}>← Back to Search</button>
+          <button className="btn-primary dash-error-btn" onClick={() => onNavigate('dashboard')}>← Back to Search</button>
         </div>
       </div>
     );
@@ -57,15 +57,14 @@ export const LoadDetailPage: React.FC<LoadDetailPageProps> = ({ onNavigate, load
     <div className="load-detail-page active">
       <Sidebar onNavigate={onNavigate} activePage="dashboard" />
       
-      <div style={{ flex: 1, marginLeft: '240px', display: 'flex' }}>
+      <div className="dash-detail-wrapper">
         <div className="detail-main">
           <div className="detail-header">
             <div 
-              className="detail-breadcrumb" 
-              style={{ cursor: 'pointer' }} 
+              className="detail-breadcrumb dash-detail-breadcrumb-clickable" 
               onClick={() => onNavigate('dashboard')}
             >
-              Marketplace <span style={{ color: '#ccc' }}>›</span> <strong style={{ color: '#111' }}>{load.id}</strong>
+              Marketplace <span className="dash-detail-breadcrumb-arrow">›</span> <strong className="dash-detail-breadcrumb-current">{load.id}</strong>
             </div>
             <div className="detail-actions">
               <button className="detail-action-btn">☆ Save</button>

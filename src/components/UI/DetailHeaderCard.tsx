@@ -39,7 +39,7 @@ export const DetailHeaderCard: React.FC<Props> = ({ load }) => {
         </div>
         <div className="detail-stat">
           <div className="detail-stat-label">Vehicle</div>
-          <div className="detail-stat-value" style={{ fontSize: '15px' }}>{load.vehicle}</div>
+          <div className="detail-stat-value">{load.vehicle}</div>
         </div>
       </div>
     </div>

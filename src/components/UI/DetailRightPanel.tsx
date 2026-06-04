@@ -21,7 +21,7 @@ export const DetailRightPanel: React.FC<Props> = ({ load }) => {
         
         {load.extraRoute && (
           <div className="stop-item">
-            <div className="stop-dot" style={{ width: '12px', height: '12px', border: '2px solid #ccc', borderRadius: '50%', background: 'white' }}></div>
+            <div className="dash-stop-dot-transit"></div>
             <div className="stop-info">
               <div className="stop-name">{load.extraRoute.replace('+ ', '')}</div>
               <div className="stop-time">Transit</div>

@@ -38,7 +38,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onNavigate }) => {
       <main className="dash-main">
         <header className="dash-header">
           <div className="dash-breadcrumb">
-            Marketplace <span style={{ color: '#ccc' }}>›</span> <strong>Search</strong>
+            Marketplace <span className="dash-detail-breadcrumb-arrow">›</span> <strong>Search</strong>
           </div>
           <div className="dash-header-right">
             <input type="text" className="dash-search" placeholder="🔍 Search lanes, cargo, ID..." />
@@ -60,14 +60,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onNavigate }) => {
               </div>
               <div className="dash-sort">
                 Sort
-                <select defaultValue="Best match" style={{ padding: '6px 12px', border: '1px solid #eee', borderRadius: '6px', fontSize: '14px', outline: 'none', background: 'white' }}>
+                <select defaultValue="Best match" className="dash-sort-select">
                   <option>Best match</option>
                 </select>
               </div>
             </div>
             
             {isLoading ? (
-              <div style={{ padding: '60px 0', textAlign: 'center', color: '#888' }}>⏳ Connecting...</div>
+              <div className="dash-loading-container">⏳ Connecting...</div>
             ) : (
               <LoadsTable 
                 loads={loads} 

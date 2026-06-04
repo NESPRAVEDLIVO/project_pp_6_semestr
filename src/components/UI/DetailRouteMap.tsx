@@ -9,10 +9,10 @@ interface Props {
 export const DetailRouteMap: React.FC<Props> = ({ load }) => {
   return (
     <div className="detail-card">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+      <div className="dash-route-map-header">
         <div>
-          <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Route: {load.from} → {load.to}</h3>
-          <p style={{ fontSize: '13px', color: '#888' }}>{load.extraRoute ? `Via ${load.extraRoute} · ` : ''}Multi-lane routing</p>
+          <h3 className="dash-detail-desc-title">Route: {load.from} → {load.to}</h3>
+          <p className="dash-route-map-title-sub">{load.extraRoute ? `Via ${load.extraRoute} · ` : ''}Multi-lane routing</p>
         </div>
         <div className="route-tabs">
           <button className="route-tab active">Driving</button>
