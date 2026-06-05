@@ -9,10 +9,28 @@ import { RecoveryPage } from './pages/Auth/RecoveryPage';
 import { SearchPage } from './pages/Dashboard/SearchPage';
 import { SavedPage } from './pages/Dashboard/SavedPage';
 import { LoadDetailPage } from './pages/Dashboard/LoadDetailPage';
+import { CreateLoadPage } from './pages/Dashboard/CreateLoadPage';
+
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>('landing');
   const [currentLoadId, setCurrentLoadId] = useState<string | null>(null);
+
+  const handleNavigate = (page: PageType, payload?: { loadId?: string }) => {
+    if (payload?.loadId) {
+      setCurrentLoadId(payload.loadId);
+    }
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  };
+
+  if (currentPage === 'create-load') {
+    return <CreateLoadPage onNavigate={handleNavigate} />;
+  }
+  if (currentPage === 'my-listings') {
+    // Временно кидаем на дашборд, пока не сделаем страницу
+    return <SearchPage onNavigate={handleNavigate} />;
+  }
 
   const navigate = (page: PageType, payload?: { loadId?: string }) => {
     if (payload?.loadId) {

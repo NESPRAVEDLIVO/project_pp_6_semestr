@@ -107,7 +107,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onNavigate }) => {
           </div>
           <div className="dash-header-right">
             <input type="text" className="dash-search" placeholder="🔍 Search lanes, cargo, ID..." />
-            <button className="dash-post-btn" onClick={() => console.log('POST LOAD CLICKED')}>+ Post load</button>
+            <button className="dash-post-btn" onClick={() => onNavigate('create-load')} style={{ background: '#3D5AFE' }}>+ Post load</button>
             <div className="dash-notify">🔔</div>
           </div>
         </header>

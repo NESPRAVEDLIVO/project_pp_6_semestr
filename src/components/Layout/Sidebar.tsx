@@ -2,22 +2,29 @@ import React from 'react';
 import type { PageType } from '../../types';
 
 interface SidebarProps {
-  onNavigate: (page: PageType) => void;
-  activePage?: PageType;
+  onNavigate: (page: PageType, payload?: { loadId?: string }) => void;
+  activePage: 'dashboard' | 'saved' | 'listings' | 'messages' | 'settings';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage }) => {
   return (
     <aside className="dash-sidebar">
-      <div className="dash-sidebar-logo" onClick={() => onNavigate('landing')} style={{ cursor: 'pointer' }}>
+      <div className="dash-sidebar-logo" style={{ cursor: 'pointer' }} onClick={() => onNavigate('landing')}>
         <div className="logo-icon">▲</div>
         Cargolane
       </div>
-      <button className="dash-new-listing">+ New listing</button>
+      
+      <button 
+        className="dash-new-listing" 
+        onClick={() => onNavigate('create-load')}
+        style={{ background: '#3D5AFE' }}
+      >
+        + New listing
+      </button>
       
       <div className="dash-nav-section">Marketplace</div>
       <div 
-        className={`dash-nav-item ${activePage?.startsWith('dashboard') ? 'active' : ''}`} 
+        className={`dash-nav-item ${activePage === 'dashboard' ? 'active' : ''}`} 
         onClick={() => onNavigate('dashboard')}
       >
         <span>🔍</span> Search
@@ -30,17 +37,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage }) => {
       </div>
       
       <div className="dash-nav-section">Workspace</div>
-      <div className="dash-nav-item">
+      <div 
+        className={`dash-nav-item ${activePage === 'listings' ? 'active' : ''}`}
+        onClick={() => onNavigate('my-listings')}
+      >
         <span>📦</span> My listings
         <span className="dash-nav-badge">7</span>
       </div>
-      <div className="dash-nav-item">
+      <div className={`dash-nav-item ${activePage === 'messages' ? 'active' : ''}`}>
         <span>💬</span> Messages
         <span className="dash-nav-badge">1</span>
       </div>
       
       <div className="dash-nav-section">Other</div>
-      <div className="dash-nav-item">
+      <div className={`dash-nav-item ${activePage === 'settings' ? 'active' : ''}`}>
         <span>⚙️</span> Settings
       </div>
       
