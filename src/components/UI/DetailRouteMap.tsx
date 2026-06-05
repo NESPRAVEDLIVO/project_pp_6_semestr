@@ -1,18 +1,29 @@
 import React from 'react';
 import type { LoadData } from '../../types';
-import mapBg from '../../assets/map.png';
+import { RoutingMap } from './RoutingMap'; // Импортируем живую карту
 
 interface Props {
   load: LoadData;
 }
 
 export const DetailRouteMap: React.FC<Props> = ({ load }) => {
+  // Собираем точки для передачи в карту
+  const mapStops = [
+    { address: load.from || 'Rotterdam', type: 'start' }
+  ];
+  if (load.extraRoute) {
+    mapStops.push({ address: load.extraRoute.replace('+ ', ''), type: 'stop' });
+  }
+  mapStops.push({ address: load.to || 'Warsaw', type: 'end' });
+
   return (
     <div className="detail-card">
-      <div className="dash-route-map-header">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div>
-          <h3 className="dash-detail-desc-title">Route: {load.from} → {load.to}</h3>
-          <p className="dash-route-map-title-sub">{load.extraRoute ? `Via ${load.extraRoute} · ` : ''}Multi-lane routing</p>
+          <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Route: {load.from} → {load.to}</h3>
+          <p style={{ fontSize: '13px', color: '#888' }}>
+            {load.extraRoute ? `Via ${load.extraRoute.replace('+ ', '')} · ` : ''}Multi-lane routing
+          </p>
         </div>
         <div className="route-tabs">
           <button className="route-tab active">Driving</button>
@@ -21,12 +32,9 @@ export const DetailRouteMap: React.FC<Props> = ({ load }) => {
         </div>
       </div>
       
-      <div className="detail-map">
-        <img src={mapBg} alt="Route map" />
-        <div className="detail-map-zoom">
-          <button className="zoom-btn">+</button>
-          <button className="zoom-btn">−</button>
-        </div>
+      {/* Живая карта маршрута вместо картинки! */}
+      <div style={{ height: '350px', width: '100%', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+        <RoutingMap stops={mapStops} />
       </div>
     </div>
   );

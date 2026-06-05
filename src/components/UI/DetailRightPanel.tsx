@@ -6,6 +6,8 @@ interface Props {
 }
 
 export const DetailRightPanel: React.FC<Props> = ({ load }) => {
+  const avatar = load.company ? load.company.substring(0, 2).toUpperCase() : 'CO';
+
   return (
     <div className="detail-right">
       <div className="detail-panel-card">
@@ -21,7 +23,7 @@ export const DetailRightPanel: React.FC<Props> = ({ load }) => {
         
         {load.extraRoute && (
           <div className="stop-item">
-            <div className="dash-stop-dot-transit"></div>
+            <div className="stop-dot" style={{ width: '12px', height: '12px', border: '2px solid #ccc', borderRadius: '50%', background: 'white' }}></div>
             <div className="stop-info">
               <div className="stop-name">{load.extraRoute.replace('+ ', '')}</div>
               <div className="stop-time">Transit</div>
@@ -41,7 +43,7 @@ export const DetailRightPanel: React.FC<Props> = ({ load }) => {
       <div className="detail-panel-card">
         <div className="panel-title">Shipper</div>
         <div className="shipper-card">
-          <div className="shipper-avatar">{load.company.substring(0, 2).toUpperCase()}</div>
+          <div className="shipper-avatar">{avatar}</div>
           <div className="shipper-info">
             <div className="shipper-name">{load.company}</div>
             <div className="shipper-meta">Verified partner</div>
@@ -54,10 +56,14 @@ export const DetailRightPanel: React.FC<Props> = ({ load }) => {
         <div className="panel-title">Place a bid</div>
         <div className="bid-input-wrapper">
           <span className="bid-currency">€</span>
-          <input type="text" className="bid-input" defaultValue={load.price.replace('€', '')} />
+          <input 
+            type="text" 
+            className="bid-input" 
+            defaultValue={(load.price || '').replace('€', '').trim()} 
+          />
         </div>
         <div className="bid-suggestion">Suggested: {load.price} based on lane average.</div>
-        <button className="bid-submit">Submit bid</button>
+        <button className="btn-figma-primary" style={{ width: '100%', justifyContent: 'center' }}>Submit bid</button>
       </div>
     </div>
   );

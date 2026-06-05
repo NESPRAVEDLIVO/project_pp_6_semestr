@@ -1,13 +1,9 @@
-export type PageType = 
-'landing' 
-| 'signin' 
-| 'signup' 
-| 'recovery' 
-| 'dashboard' 
-| 'saved' 
-| 'load-detail' 
-| 'create-load' 
-| 'my-listings';
+export type PageType = 'landing' | 'signin' | 'signup' | 'recovery' | 'dashboard' | 'saved' | 'load-detail' | 'create-load' | 'my-listings';
+
+export interface NavigationPayload {
+  loadId?: string;
+  fromPage?: string; // 💡 Новый параметр для умных хлебных крошек
+}
 
 export interface LoadData {
   id: string;

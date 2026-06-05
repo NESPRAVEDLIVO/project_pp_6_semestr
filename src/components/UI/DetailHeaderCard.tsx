@@ -16,7 +16,7 @@ export const DetailHeaderCard: React.FC<Props> = ({ load }) => {
             <span className="detail-badge time">Posted recently</span>
           </div>
           <h2 className="detail-title">{load.cargo}</h2>
-          <p className="detail-subtitle">{load.id} · {load.company} GmbH</p>
+          <p className="detail-subtitle">{load.id} · {load.company || 'Unknown'} GmbH</p>
         </div>
         <div className="detail-price">
           <div className="detail-price-value">{load.price}</div>
@@ -27,19 +27,19 @@ export const DetailHeaderCard: React.FC<Props> = ({ load }) => {
       <div className="detail-stats-row">
         <div className="detail-stat">
           <div className="detail-stat-label">Distance</div>
-          <div className="detail-stat-value">1,283 km</div>
+          <div className="detail-stat-value">~ Auto</div>
         </div>
         <div className="detail-stat">
           <div className="detail-stat-label">Drive time</div>
-          <div className="detail-stat-value">~17 h</div>
+          <div className="detail-stat-value">~ Auto</div>
         </div>
         <div className="detail-stat">
           <div className="detail-stat-label">Stops</div>
-          <div className="detail-stat-value">2 + final</div>
+          <div className="detail-stat-value">{load.extraRoute ? '2 + final' : '1 + final'}</div>
         </div>
         <div className="detail-stat">
           <div className="detail-stat-label">Vehicle</div>
-          <div className="detail-stat-value">{load.vehicle}</div>
+          <div className="detail-stat-value" style={{ fontSize: '15px' }}>{load.vehicle}</div>
         </div>
       </div>
     </div>

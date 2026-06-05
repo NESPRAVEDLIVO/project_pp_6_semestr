@@ -7,50 +7,26 @@ interface Props {
 
 export const DetailSpecs: React.FC<Props> = ({ load }) => {
   return (
-    <>
-      <div className="detail-card">
-        <h3 className="dash-detail-specs-title">Cargo specifications</h3>
-        
-        <div className="specs-grid">
-          <div className="spec-card">
-            <div className="spec-label">Total weight</div>
-            <div className="spec-value">{load.mass}</div>
-            <div className="spec-note">Gross mass</div>
-          </div>
-          <div className="spec-card">
-            <div className="spec-label">Total volume</div>
-            <div className="spec-value">{load.volume}</div>
-            <div className="spec-note">Estimated</div>
-          </div>
-          <div className="spec-card">
-            <div className="spec-label">Loading metres</div>
-            <div className="spec-value">13.6 LDM</div>
-            <div className="spec-note">full trailer</div>
-          </div>
-          <div className="spec-card">
-            <div className="spec-label">Unit dim.</div>
-            <div className="spec-value">Standard</div>
-            <div className="spec-note">EU-pallet compatible</div>
-          </div>
+    <div className="detail-card">
+      <h3 className="dash-detail-specs-title">Cargo Specifications</h3>
+      <div className="specs-grid">
+        <div className="spec-card">
+          <div className="spec-label">Weight</div>
+          <div className="spec-value">{load.mass}</div>
         </div>
-        
-        <div className="specs-tags">
-          <span className="spec-tag">⊘ Non-stackable</span>
-          <span className="spec-tag">🛡️ Insured to €60k</span>
-          <span className="spec-tag">⚡ ADR not required</span>
-          <span className="spec-tag">🕐 Load: {load.dateStart}, 08:00–12:00</span>
-          {load.dateEnd && <span className="spec-tag">🕐 Unload: {load.dateEnd}, 06:00–10:00</span>}
+        <div className="spec-card">
+          <div className="spec-label">Volume</div>
+          <div className="spec-value">{load.volume}</div>
+        </div>
+        <div className="spec-card">
+          <div className="spec-label">Vehicle Type</div>
+          <div className="spec-value" style={{ fontSize: '16px' }}>{load.vehicle}</div>
+        </div>
+        <div className="spec-card">
+          <div className="spec-label">Commodity</div>
+          <div className="spec-value" style={{ fontSize: '16px' }}>{load.cargo.split('·')[0].trim()}</div>
         </div>
       </div>
-      
-      <div className="detail-card">
-        <h3 className="dash-detail-desc-title">Description</h3>
-        <p className="dash-detail-desc-text">
-          Standard secure transport requested. <br />
-          Please ensure vehicle matches required specifications: {load.vehicle}.<br />
-          Contact dispatcher upon arrival.
-        </p>
-      </div>
-    </>
+    </div>
   );
 };
