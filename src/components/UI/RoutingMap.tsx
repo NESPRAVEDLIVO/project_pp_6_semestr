@@ -5,9 +5,10 @@ import 'leaflet/dist/leaflet.css';
 
 interface RoutingMapProps {
   stops: { address: string; type: string }[];
+  hideFloatingWidget?: boolean;
+  onRouteCalculated?: (distance: string, duration: string) => void;
 }
 
-// Локальный кэш, чтобы не спамить API одними и теми же запросами
 const GEO_CACHE: Record<string, [number, number]> = {
   'rotterdam': [51.9225, 4.47927],
   'warsaw': [52.2297, 21.0122],
@@ -21,11 +22,10 @@ const GEO_CACHE: Record<string, [number, number]> = {
   'madrid': [40.4168, -3.7038]
 };
 
-// Функция для кастомных точек на карте вместо обычных булавок
 const getCustomDotIcon = (type: string) => {
-  let color = '#5C6470'; // Grey for intermediate stops
-  if (type === 'start') color = '#3D5AFE'; // Blue
-  if (type === 'end') color = '#00C48C'; // Green
+  let color = '#5C6470'; 
+  if (type === 'start') color = '#3D5AFE'; 
+  if (type === 'end') color = '#00C48C'; 
   
   return L.divIcon({
     className: 'clear-custom-icon',
@@ -48,7 +48,7 @@ const MapAutoFitter = ({ positions }: { positions: [number, number][] }) => {
   return null;
 };
 
-export const RoutingMap: React.FC<RoutingMapProps> = ({ stops }) => {
+export const RoutingMap: React.FC<RoutingMapProps> = ({ stops, hideFloatingWidget, onRouteCalculated }) => {
   const [routeData, setRouteData] = useState<{
     markers: { pos: [number, number], type: string }[];
     coordinates: [number, number][];
@@ -62,7 +62,6 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ stops }) => {
     const fetchRoute = async () => {
       const validMarkers: { pos: [number, number], type: string }[] = [];
 
-      // 1. Собираем координаты для каждого введенного адреса
       for (const stop of stops) {
         const query = stop.address.trim().toLowerCase();
         if (query.length < 3) continue;
@@ -72,24 +71,20 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ stops }) => {
         if (dictMatch) {
           validMarkers.push({ pos: GEO_CACHE[dictMatch], type: stop.type });
         } else {
-          // Магия Nominatim: ищем любой город мира
           try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
             const data = await res.json();
             if (data && data.length > 0) {
               const pos: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-              GEO_CACHE[query] = pos; // Сохраняем в кэш
+              GEO_CACHE[query] = pos; 
               validMarkers.push({ pos, type: stop.type });
             }
-          } catch {
-            console.error("Geocoding failed for", query);
-          }
+          } catch (e) {}
         }
       }
 
       if (!isMounted) return;
 
-      // 2. Строим автомобильный маршрут между точками через OSRM
       if (validMarkers.length > 1) {
         const coordsString = validMarkers.map(m => `${m.pos[1]},${m.pos[0]}`).join(';');
         const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
@@ -107,17 +102,13 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ stops }) => {
             const timeStr = hrs > 0 ? `${hrs} h ${mins} min` : `${mins} min`;
 
             if (isMounted) {
-              setRouteData({
-                markers: validMarkers,
-                coordinates: geojsonCoords,
-                distanceStr: distKm,
-                durationStr: timeStr
-              });
+              setRouteData({ markers: validMarkers, coordinates: geojsonCoords, distanceStr: distKm, durationStr: timeStr });
+              if (onRouteCalculated) onRouteCalculated(distKm, timeStr);
             }
           } else {
             if (isMounted) setRouteData({ markers: validMarkers, coordinates: validMarkers.map(m => m.pos), distanceStr: '', durationStr: '' });
           }
-        } catch {
+        } catch (e) {
           if (isMounted) setRouteData({ markers: validMarkers, coordinates: validMarkers.map(m => m.pos), distanceStr: '', durationStr: '' });
         }
       } else {
@@ -125,22 +116,13 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ stops }) => {
       }
     };
 
-    // Небольшая задержка, чтобы API не дергался на каждую введенную букву
-    const timeoutId = setTimeout(() => {
-      fetchRoute();
-    }, 800);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
+    const timeoutId = setTimeout(() => { fetchRoute(); }, 500);
+    return () => { isMounted = false; clearTimeout(timeoutId); };
   }, [stops]);
 
   return (
     <div style={{ height: '100%', width: '100%', position: 'relative' }}>
-      
-      {/* ПАРЯЩИЙ ВИДЖЕТ С ИНФОРМАЦИЕЙ О ПУТИ */}
-      {routeData.distanceStr && (
+      {!hideFloatingWidget && routeData.distanceStr && (
         <div style={{
           position: 'absolute', top: 16, right: 16, zIndex: 1000,
           background: 'white', padding: '12px 16px', borderRadius: '12px',
@@ -157,13 +139,8 @@ export const RoutingMap: React.FC<RoutingMapProps> = ({ stops }) => {
            </div>
         </div>
       )}
-
-      {/* Интерактивная карта со светлой темой Voyager */}
       <MapContainer center={[51.1657, 10.4515]} zoom={4} style={{ height: '100%', width: '100%' }} zoomControl={false}>
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; CARTO'
-        />
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='&copy; CARTO' />
         {routeData.markers.map((marker, i) => (
           <Marker key={i} position={marker.pos} icon={getCustomDotIcon(marker.type)} />
         ))}

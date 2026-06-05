@@ -19,38 +19,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNavigate, activePage }) => {
       </button>
 
       <div className="dash-nav-section">Marketplace</div>
-      
-      <div 
-        className={`dash-nav-item ${activePage === 'dashboard' ? 'active' : ''}`}
-        onClick={() => onNavigate('dashboard')}
-      >
+      <div className={`dash-nav-item ${activePage === 'dashboard' ? 'active' : ''}`} onClick={() => onNavigate('dashboard')}>
         🔍 Search
       </div>
-      
-      <div 
-        className={`dash-nav-item ${activePage === 'saved' ? 'active' : ''}`}
-        onClick={() => onNavigate('saved')}
-      >
+      <div className={`dash-nav-item ${activePage === 'saved' ? 'active' : ''}`} onClick={() => onNavigate('saved')}>
         📌 Saved searches
       </div>
 
       <div className="dash-nav-section" style={{ marginTop: '16px' }}>Workspace</div>
-      
-      <div 
-        className={`dash-nav-item ${activePage === 'listings' ? 'active' : ''}`}
-        onClick={() => onNavigate('my-listings')}
-      >
+      <div className={`dash-nav-item ${activePage === 'listings' ? 'active' : ''}`} onClick={() => onNavigate('my-listings')}>
         📦 My listings <span className="dash-nav-badge">6</span>
       </div>
-      
       <div className="dash-nav-item">
         💬 Messages <span className="dash-nav-badge" style={{ background: '#F6F7FB', color: '#5C6470' }}>1</span>
       </div>
 
       <div className="dash-nav-section" style={{ marginTop: '16px' }}>Other</div>
-      <div className={`dash-nav-item ${activePage === 'settings' ? 'active' : ''}`}>
-        ⚙ Settings
-      </div>
+      <div className={`dash-nav-item ${activePage === 'settings' ? 'active' : ''}`}>⚙ Settings</div>
 
       <div className="dash-user">
         <div className="dash-user-avatar">EM</div>

@@ -2,7 +2,7 @@ export type PageType = 'landing' | 'signin' | 'signup' | 'recovery' | 'dashboard
 
 export interface NavigationPayload {
   loadId?: string;
-  fromPage?: string; // 💡 Новый параметр для умных хлебных крошек
+  fromPage?: string;
 }
 
 export interface LoadData {

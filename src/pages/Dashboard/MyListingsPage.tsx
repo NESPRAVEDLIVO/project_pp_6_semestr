@@ -7,31 +7,37 @@ interface MyListingsPageProps {
   onNavigate: (page: PageType, payload?: NavigationPayload) => void;
 }
 
-// 💡 БЭКЕНД-ПАЗ: Статусы будут приходить напрямую из базы данных
 interface MyLoadData extends LoadData {
-  status: 'active' | 'pending' | 'draft' | 'archived';
+  status: 'active' | 'pending' | 'draft' | 'closed';
+  bids?: number;
+  views?: number;
 }
 
 export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) => {
   const [loads, setLoads] = useState<MyLoadData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'draft'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'draft' | 'closed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchMyLoads = async () => {
       setIsLoading(true);
       try {
-        // 💡 БЭКЕНД-ПАЗ: Здесь будет axios.get('/api/users/me/loads')
         const data = await loadsService.getAllLoads();
         const safeData = (Array.isArray(data) ? data : []) as LoadData[];
         
-        // ВРЕМЕННЫЙ МОК СТАТУСОВ
         const loadsWithStatus: MyLoadData[] = safeData.slice(0, 7).map((load, index) => {
           let status: MyLoadData['status'] = 'active';
-          if (index === 1) status = 'pending';
-          if (index === 3) status = 'draft';
-          return { ...load, status };
+          let bids = 14;
+          let views = 312;
+
+          if (index === 1) { status = 'pending'; bids = 0; views = 12; }
+          if (index === 2) { status = 'active'; bids = 22; views = 412; }
+          if (index === 3) { status = 'draft'; bids = 0; views = 0; }
+          if (index === 4) { status = 'closed'; bids = 18; views = 280; }
+          if (index === 5) { status = 'closed'; bids = 11; views = 198; }
+
+          return { ...load, status, bids, views };
         });
         
         setLoads(loadsWithStatus);
@@ -61,10 +67,11 @@ export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) =>
     active: Array.isArray(loads) ? loads.filter(l => l.status === 'active').length : 0,
     pending: Array.isArray(loads) ? loads.filter(l => l.status === 'pending').length : 0,
     draft: Array.isArray(loads) ? loads.filter(l => l.status === 'draft').length : 0,
+    closed: Array.isArray(loads) ? loads.filter(l => l.status === 'closed').length : 0,
   };
 
   const getStatusBadge = (status: string) => {
-    const labels: Record<string, string> = { active: 'Active', pending: 'In review', draft: 'Draft', archived: 'Closed' };
+    const labels: Record<string, string> = { active: 'Active', pending: 'In review', draft: 'Draft', closed: 'Closed' };
     return <span className={`status-pill ${status}`}>{labels[status]}</span>;
   };
 
@@ -73,8 +80,6 @@ export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) =>
       <Sidebar onNavigate={onNavigate} activePage="listings" />
       
       <main className="dash-main" style={{ background: '#F6F7FB', minHeight: '100vh' }}>
-        
-        {/* HEADER */}
         <header className="create-header" style={{ padding: '16px 48px' }}>
           <div>
             <div className="dash-breadcrumb">
@@ -95,7 +100,6 @@ export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) =>
 
         <div className="my-listings-layout">
           
-          {/* БЛОК 1: ВКЛАДКИ И ПОИСК (Отдельная белая карточка по ТЗ) */}
           <div className="my-listings-toolbar-card">
             <div className="my-listings-tabs">
               <button className={`my-listings-tab ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>
@@ -110,6 +114,9 @@ export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) =>
               <button className={`my-listings-tab ${activeTab === 'draft' ? 'active' : ''}`} onClick={() => setActiveTab('draft')}>
                 Drafts <span className="tab-count">{counts.draft}</span>
               </button>
+              <button className={`my-listings-tab ${activeTab === 'closed' ? 'active' : ''}`} onClick={() => setActiveTab('closed')}>
+                Closed <span className="tab-count">{counts.closed}</span>
+              </button>
             </div>
             
             <div className="my-listings-actions-right">
@@ -123,13 +130,13 @@ export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) =>
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              {/* КНОПКА FILTER ВЕРНУЛАСЬ СЮДА */}
               <button className="btn-figma-secondary">
                 <span style={{ fontSize: '16px' }}>⚙</span> Filter
               </button>
             </div>
           </div>
 
-          {/* БЛОК 2: ТАБЛИЦА (Отдельная белая карточка по ТЗ) */}
           <div className="my-listings-table-card">
             {isLoading ? (
               <div className="dash-loading-container" style={{ padding: '60px' }}>⏳ Loading your listings...</div>
@@ -137,18 +144,20 @@ export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) =>
               <div className="dash-loading-container" style={{ padding: '60px', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ fontSize: '48px' }}>📦</div>
                 <div style={{ color: '#0E1116', fontWeight: 600 }}>No listings found</div>
-                <div style={{ fontSize: '14px' }}>Try changing your filters or create a new listing.</div>
               </div>
             ) : (
               <table className="my-listings-table figma-table">
                 <thead>
                   <tr>
-                    <th style={{ paddingLeft: '24px' }}>Listing ID & Date</th>
-                    <th>Route</th>
-                    <th>Cargo & Vehicle</th>
+                    <th style={{ paddingLeft: '24px' }}>Listing ID</th>
+                    <th>Lane</th>
+                    <th>Date</th>
+                    <th>Cargo</th>
                     <th>Price</th>
                     <th>Status</th>
-                    <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
+                    <th>Bids</th>
+                    <th>Views</th>
+                    <th style={{ textAlign: 'right', paddingRight: '24px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,35 +165,26 @@ export const MyListingsPage: React.FC<MyListingsPageProps> = ({ onNavigate }) =>
                     <tr 
                       key={load.id} 
                       style={{ cursor: 'pointer' }} 
-                      // 💡 ПЕРЕДАЕМ ПАРАМЕТР fromPage, ЧТОБЫ УМНЫЕ КРОШКИ ПОНЯЛИ ОТКУДА МЫ ПРИШЛИ
                       onClick={() => onNavigate('load-detail', { loadId: load.id, fromPage: 'my-listings' })}
                     >
                       <td style={{ paddingLeft: '24px' }}>
                         <div className="load-id" style={{ color: '#3D5AFE', fontWeight: 600, fontSize: '14px' }}>{load.id}</div>
-                        <div className="date-cell" style={{ fontSize: '13px', marginTop: '4px' }}>{load.dateStart}</div>
                       </td>
                       <td>
                         <div className="lane-cell">
                           {load.from} <span className="lane-arrow">›</span> {load.to}
                         </div>
                       </td>
-                      <td>
-                        <div style={{ fontSize: '14px', fontWeight: 500, color: '#0E1116' }}>{load.cargo}</div>
-                        <div style={{ fontSize: '13px', color: '#5C6470', marginTop: '4px' }}>
-                          {load.mass} • {load.volume} • {load.vehicle}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="price-cell" style={{ color: '#0E1116' }}>{load.price}</div>
-                        <div style={{ fontSize: '12px', color: '#888' }}>excl. VAT</div>
-                      </td>
-                      <td>
-                        {getStatusBadge(load.status)}
-                      </td>
+                      <td style={{ color: '#5C6470' }}>{load.dateStart}</td>
+                      <td>{load.cargo}</td>
+                      <td style={{ fontWeight: 600 }}>{load.price}</td>
+                      <td>{getStatusBadge(load.status)}</td>
+                      <td style={{ fontWeight: 500 }}>{load.bids}</td>
+                      <td style={{ color: '#5C6470' }}>{load.views}</td>
                       <td style={{ textAlign: 'right', paddingRight: '24px' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
-                          <button className="btn-icon-action" title="Edit">✎</button>
-                          <button className="btn-icon-action danger" title="Delete">🗑</button>
+                           {/* КНОПКА "ТРОЕТОЧИЕ" КАК В FIGMA */}
+                          <button className="action-dots">⋯</button>
                         </div>
                       </td>
                     </tr>
