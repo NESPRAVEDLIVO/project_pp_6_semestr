@@ -1955,3 +1955,100 @@ h1 .highlight {
     margin-top: 2px;
     flex-shrink: 0;
   }
+
+
+
+
+
+
+
+
+
+
+/* ===== ФИЛЬТРЫ И СОРТИРОВКА (SearchPage) ===== */
+.dash-filters {
+    display: flex;
+    flex-wrap: wrap; /* Позволяет фильтрам переноситься на новую строку на малых экранах */
+    gap: 12px; /* Аккуратные отступы между всеми фильтрами */
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .filter-select-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 36px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    flex: 1 1 auto; /* Позволяет блокам гибко подстраиваться под размер экрана */
+    min-width: 140px; /* Защита от слишком сильного сжатия */
+    max-width: max-content; /* Не дает им растягиваться на весь экран */
+    white-space: nowrap; /* Запрет переноса текста внутри фильтра */
+  }
+  
+  .filter-select-wrapper:hover {
+    border-color: #4c6ff7;
+  }
+  
+  .filter-select-wrapper:focus-within {
+    border-color: #4c6ff7;
+    box-shadow: 0 0 0 3px rgba(76, 111, 247, 0.1);
+  }
+  
+  .filter-label {
+    font-size: 13px;
+    color: #888;
+    margin-right: 6px;
+  }
+  
+  .filter-select {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 16px;
+    flex: 1; /* Чтобы select занимал оставшееся место внутри wrapper */
+  }
+  
+  .filter-select-arrow {
+    position: absolute;
+    right: 12px;
+    font-size: 10px;
+    color: #111;
+    pointer-events: none;
+  }
+  
+  .filter-btn-arrow {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 16px;
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+  
+  .filter-reset-btn {
+    background: transparent;
+    border: none;
+    color: #ea4335;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: auto;
+    transition: opacity 0.2s;
+    padding: 0 8px;
+  }
+  
+  .filter-reset-btn:hover {
+    text-decoration: underline;
+  }
+
