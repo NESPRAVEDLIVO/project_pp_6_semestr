@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { PageType } from '../../types';
 import { Sidebar } from '../../components/Layout/Sidebar';
 import { RoutingMap } from '../../components/UI/RoutingMap';
@@ -39,7 +39,6 @@ interface LoadFormData {
 }
 
 export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) => {
-  // Стейт формы
   const [formData, setFormData] = useState<LoadFormData>({
     listingType: '',
     stops: [
@@ -59,10 +58,9 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
     price: ''
   });
 
-  // ИСПРАВЛЕНИЕ: Стейт отправки заявки (переключает UI на макет №6)
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [generatedId, setGeneratedId] = useState<string>(''); // Стейт для рандомного ID
 
-  // Логика активного шага
   let activeStep = 1;
   if (formData.listingType) activeStep = 2;
   if (formData.stops[0].address && formData.stops[formData.stops.length - 1].address) activeStep = 3;
@@ -71,7 +69,19 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
   if (formData.price) activeStep = 6;
   if (isSubmitted) activeStep = 6;
 
-  // --- Математика калькулятора ---
+  // Жесткая валидация
+  const isFormValid = useMemo(() => {
+    const hasType = formData.listingType !== '';
+    const hasRoute = formData.stops.every(s => s.address.trim() !== '' && s.datetime !== '');
+    const hasCargoCategory = formData.cargoCategory !== '';
+    const hasPackages = formData.packages.some(p => Number(p.qty) > 0 && Number(p.weight) > 0 && Number(p.length) > 0);
+    const hasVehicle = formData.vehicle !== '';
+    const hasPrice = formData.price !== '';
+
+    return hasType && hasRoute && hasCargoCategory && hasPackages && hasVehicle && hasPrice;
+  }, [formData]);
+
+  // Автоматематика
   let totalMass = 0;
   let totalVolume = 0;
   let floorFootprint = 0;
@@ -92,7 +102,6 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
 
   const ldm = (floorFootprint / 2.4).toFixed(1);
 
-  // --- Форматирование даты в макетный вид ---
   const formatDisplayDate = (isoString: string) => {
     if (!isoString) return '';
     const d = new Date(isoString);
@@ -101,7 +110,6 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
     return `${months[d.getMonth()]} ${d.getDate()} • ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  // --- Обработчики маршрутов ---
   const handleAddStop = () => {
     const newStops = [...formData.stops];
     const newStop: RouteStop = { id: Date.now().toString(), type: 'stop', address: '', datetime: '' };
@@ -119,11 +127,11 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
       const newStops = formData.stops.map(s => s.id === id ? { ...s, address: '', datetime: '' } : s);
       setFormData({ ...formData, stops: newStops });
     } else {
-      setFormData({ ...formData, stops: formData.stops.filter(s => s.id !== id) });
+      const newStops = formData.stops.filter(s => s.id !== id);
+      setFormData({ ...formData, stops: newStops });
     }
   };
 
-  // --- Обработчики груза ---
   const handleAddPackage = () => {
     const newPkg: PackageItem = { id: Date.now().toString(), type: 'Custom', length: '', width: '', height: '', weight: '', qty: '' };
     setFormData({ ...formData, packages: [...formData.packages, newPkg] });
@@ -144,10 +152,11 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
   };
 
   const handleSave = () => {
-    // 💡 ИСПРАВЛЕНИЕ: Вместо перехода на главную страницу, показываем блок успеха и блокируем форму
-    console.log('Sending to backend:', formData);
+    const randomId = '#L-' + Math.floor(1000 + Math.random() * 9000);
+    setGeneratedId(randomId);
+    console.log('Sending to backend:', formData, 'Generated ID:', randomId);
     setIsSubmitted(true);
-    window.scrollTo(0, 0); // Прокручиваем наверх, чтобы пользователь увидел успех
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -164,7 +173,7 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
               <span className="dash-detail-breadcrumb-arrow"> › </span> 
               <span className="dash-detail-breadcrumb-clickable" onClick={() => onNavigate('my-listings')}>My listings</span>
               <span className="dash-detail-breadcrumb-arrow"> › </span> 
-              <strong style={{color: '#0E1116'}}>{isSubmitted ? '#L-8492' : 'New'}</strong>
+              <strong style={{color: '#0E1116'}}>{isSubmitted ? generatedId : 'New'}</strong>
             </div>
             <h1 className="create-header-title">{isSubmitted ? 'Listing details' : 'New listing'}</h1>
           </div>
@@ -172,14 +181,14 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
           <div className="create-header-actions">
             {!isSubmitted && <button className="btn-figma-text">Save draft</button>}
             <button className="btn-figma-secondary" onClick={() => onNavigate('dashboard')}>{isSubmitted ? 'Close' : 'Cancel'}</button>
-            {!isSubmitted && <button className="btn-figma-primary" onClick={handleSave}>Continue ›</button>}
+            {!isSubmitted && <button className="btn-figma-primary" disabled={!isFormValid} onClick={handleSave}>Continue ›</button>}
             <div className="dash-notify">🔔</div>
           </div>
         </header>
 
         <div className="create-layout">
           
-          {/* СЛЕВА: ФИКСИРОВАННАЯ ПАНЕЛЬ ШАГОВ */}
+          {/* СЛЕВА: ФИКСИРОВАННАЯ ПАНЕЛЬ ШАГОВ В ВИДЕ БЕЛОЙ КАРТОЧКИ С ТЕНЬЮ */}
           <aside className="create-steps-sidebar">
             <div className={`create-step-item ${activeStep === 1 ? 'active' : ''} ${isSubmitted ? 'step-disabled' : ''}`}>
               <div className={`step-icon ${activeStep > 1 || isSubmitted ? 'done' : activeStep === 1 ? 'active' : 'pending'}`}>
@@ -242,25 +251,22 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
             </div>
           </aside>
 
-          {/* ПО ЦЕНТРУ: КОНТЕНТ ФОРМЫ */}
+          {/* ПО ЦЕНТРУ: КОНТЕНТ СО ВСЕМИ КАРТОЧКАМИ ФИКСИРОВАННОЙ ШИРИНЫ */}
           <div className="create-content">
             
-            {/* БЛОК УСПЕХА (Показывается только если isSubmitted = true) */}
             {isSubmitted && (
-              <div className="step-row step-6">
+              <div className="step-row">
                 <div className="step-main-card success-submission-card">
                   <div className="success-icon-large">✓</div>
                   <h2>Listing is sent to Moderator</h2>
                   <p>Thank you Elena. Your listing is successfully sent to moderation.<br/>You will be notified once it's approved and published on Marketplace.</p>
-                  
                   <div className="success-status-box">
                     <div>
                       <div style={{ fontSize: '12px', color: '#5C6470', marginBottom: '4px' }}>Listing ID</div>
-                      <div style={{ fontSize: '18px', fontWeight: '600', color: '#0E1116' }}>#L-8492</div>
+                      <div style={{ fontSize: '18px', fontWeight: '600', color: '#0E1116' }}>{generatedId}</div>
                     </div>
                     <div className="status-badge pending">Moderation pending</div>
                   </div>
-
                   <div className="success-actions">
                     <button className="btn-figma-secondary" onClick={() => onNavigate('dashboard')}>Back to Dashboard</button>
                     <button className="btn-figma-primary" onClick={() => onNavigate('dashboard')}>View my listings</button>
@@ -269,8 +275,6 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
               </div>
             )}
 
-
-            {/* STEP 1: TYPE */}
             <div className={`step-row ${isSubmitted ? 'step-disabled' : ''}`}>
               <div className="step-main-card">
                 <div className="step-title-row">
@@ -281,25 +285,12 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
                   <span className="step-count">Step 1 of 6</span>
                 </div>
                 <div style={{ display: 'flex', gap: '16px' }}>
-                  <button 
-                    className={`btn-figma-secondary ${formData.listingType === 'I have cargo' ? 'active' : ''}`} 
-                    style={{ flex: 1, padding: '16px' }}
-                    onClick={() => setFormData({...formData, listingType: 'I have cargo'})}
-                  >
-                    📦 I have cargo
-                  </button>
-                  <button 
-                    className={`btn-figma-secondary ${formData.listingType === 'I have vehicle' ? 'active' : ''}`} 
-                    style={{ flex: 1, padding: '16px' }}
-                    onClick={() => setFormData({...formData, listingType: 'I have vehicle'})}
-                  >
-                    🚛 I have vehicle
-                  </button>
+                  <button className={`btn-figma-secondary ${formData.listingType === 'I have cargo' ? 'active' : ''}`} style={{ flex: 1, padding: '16px' }} onClick={() => setFormData({...formData, listingType: 'I have cargo'})}>📦 I have cargo</button>
+                  <button className={`btn-figma-secondary ${formData.listingType === 'I have vehicle' ? 'active' : ''}`} style={{ flex: 1, padding: '16px' }} onClick={() => setFormData({...formData, listingType: 'I have vehicle'})}>🚛 I have vehicle</button>
                 </div>
               </div>
             </div>
 
-            {/* STEP 2: ROUTE */}
             <div className={`step-row ${isSubmitted ? 'step-disabled' : ''}`}>
               <div className="step-main-card">
                 <div className="step-title-row">
@@ -326,30 +317,17 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
                         {stop.type === 'start' ? 'Start' : stop.type === 'end' ? 'End' : `Stop ${index}`}
                       </div>
                       
-                      <input 
-                        type="text" 
-                        className="figma-input" 
-                        placeholder="e.g. Rotterdam, NL"
-                        value={stop.address}
-                        onChange={(e) => handleUpdateStop(stop.id, 'address', e.target.value)}
-                      />
+                      <input type="text" className="figma-input" placeholder="e.g. Rotterdam, NL" value={stop.address} onChange={(e) => handleUpdateStop(stop.id, 'address', e.target.value)} />
                       
-                      {/* ИСПРАВЛЕНИЕ КАЛЕНДАРЯ: pointerEvents 'none' пробрасывает клик вниз */}
-                      <div style={{ position: 'relative', width: '100%', cursor: 'pointer' }}>
-                        <input 
-                          type="text" 
-                          className="figma-input" 
-                          placeholder="Select date"
-                          value={formatDisplayDate(stop.datetime)}
-                          readOnly
-                          style={{ pointerEvents: 'none', backgroundColor: 'white' }}
-                        />
-                        <input 
-                          type="datetime-local" 
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                          value={stop.datetime}
-                          onChange={(e) => handleUpdateStop(stop.id, 'datetime', e.target.value)}
-                        />
+                      <div 
+                        style={{ position: 'relative', width: '100%', cursor: 'pointer' }}
+                        onClick={(e) => {
+                          const target = e.currentTarget.querySelector('input[type="datetime-local"]') as HTMLInputElement;
+                          if (target && target.showPicker) target.showPicker();
+                        }}
+                      >
+                        <input type="text" className="figma-input" placeholder="Select date" value={formatDisplayDate(stop.datetime)} readOnly style={{ pointerEvents: 'none', backgroundColor: 'white' }} />
+                        <input type="datetime-local" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} value={stop.datetime} onChange={(e) => handleUpdateStop(stop.id, 'datetime', e.target.value)} />
                       </div>
 
                       <div>
@@ -358,28 +336,16 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
                     </div>
                   );
                 })}
-
-                <button className="btn-figma-text" style={{ color: '#3D5AFE', padding: '12px 0 0 0' }} onClick={handleAddStop}>
-                  + Add stop
-                </button>
-              </div>
-              
-              <div className="step-aside-widget">
-                <div style={{ background: 'white', border: '1px solid #E6E8EE', borderRadius: '12px', overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, borderBottom: '1px solid #E6E8EE' }}>Map preview</div>
-                  {/* ИСПРАВЛЕНИЕ: Настоящая интерактивная карта */}
-                  <RoutingMap stops={formData.stops} />
-                </div>
+                <button className="btn-figma-text" style={{ color: '#3D5AFE', padding: '12px 0 0 0' }} onClick={handleAddStop}>+ Add stop</button>
               </div>
             </div>
 
-            {/* STEP 3: CARGO DETAILS */}
             <div className={`step-row ${isSubmitted ? 'step-disabled' : ''}`}>
               <div className="step-main-card">
                 <div className="step-title-row">
                   <div>
                     <h2>Cargo details</h2>
-                    <p>Add packages by type. We'll calculate total mass, volume and LDM automatically as you type.</p>
+                    <p>Add packages by type. We'll calculate total metrics automatically.</p>
                   </div>
                   <span className="step-count">Step 3 of 6</span>
                 </div>
@@ -387,13 +353,7 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
                 <span className="chip-label">Cargo type</span>
                 <div className="chip-group">
                   {['Pallets', 'Boxes', 'Containers', 'Refrigerated', 'ADR / Hazmat', 'Other'].map(type => (
-                    <div 
-                      key={type} 
-                      className={`chip ${formData.cargoCategory === type ? 'active' : ''}`}
-                      onClick={() => setFormData({...formData, cargoCategory: type})}
-                    >
-                      {type}
-                    </div>
+                    <div key={type} className={`chip ${formData.cargoCategory === type ? 'active' : ''}`} onClick={() => setFormData({...formData, cargoCategory: type})}>{type}</div>
                   ))}
                 </div>
 
@@ -418,173 +378,100 @@ export const CreateLoadPage: React.FC<CreateLoadPageProps> = ({ onNavigate }) =>
                     <button className="btn-icon-danger" onClick={() => handleRemovePackage(pkg.id)}>🗑</button>
                   </div>
                 ))}
-                
-                <button className="btn-figma-text" style={{ color: '#3D5AFE', padding: '8px 0 24px 0' }} onClick={handleAddPackage}>
-                  + Add package row
-                </button>
+                <button className="btn-figma-text" style={{ color: '#3D5AFE', padding: '8px 0 24px 0' }} onClick={handleAddPackage}>+ Add package row</button>
 
                 <div style={{ display: 'flex', gap: '24px', paddingTop: '24px', borderTop: '1px solid #E6E8EE' }}>
                   <div style={{ flex: 1 }}>
                     <span className="chip-label">Stackability</span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '24px' }}>
                       {['Non-stackable', 'Stackable ×2', 'Stackable ×3'].map(opt => (
-                        <div key={opt} className={`chip ${formData.stackability === opt ? 'active dark' : ''}`} style={{ justifyContent: 'center', padding: '10px 4px', textAlign: 'center', width: '100%', margin: 0 }} onClick={() => setFormData({...formData, stackability: opt})}>{opt}</div>
+                        <div key={opt} className={`chip ${formData.stackability === opt ? 'active dark' : ''}`} style={{ justifyContent: 'center', padding: '10px 4px', textAlign: 'center' }} onClick={() => setFormData({...formData, stackability: opt})}>{opt}</div>
                       ))}
                     </div>
-
                     <span className="chip-label">Insured value</span>
-                    <input 
-                      type="text" 
-                      className="figma-input" 
-                      placeholder="€ 60,000" 
-                      value={formData.insuredValue ? `€ ${Number(formData.insuredValue.replace(/\D/g, '')).toLocaleString('en-US')}` : ''} 
-                      onChange={(e) => setFormData({...formData, insuredValue: e.target.value.replace(/\D/g, '')})}
-                    />
+                    <input type="text" className="figma-input" placeholder="€ 60,000" value={formData.insuredValue ? `€ ${Number(formData.insuredValue.replace(/\D/g, '')).toLocaleString('en-US')}` : ''} onChange={(e) => setFormData({...formData, insuredValue: e.target.value.replace(/\D/g, '')})} />
                   </div>
                   
                   <div style={{ flex: 1 }}>
                     <span className="chip-label">Temperature</span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '24px' }}>
                       {['Ambient', '+2 to +8 °C', 'Frozen'].map(opt => (
-                        <div key={opt} className={`chip ${formData.temperature === opt ? 'active dark' : ''}`} style={{ justifyContent: 'center', padding: '10px 4px', textAlign: 'center', width: '100%', margin: 0 }} onClick={() => setFormData({...formData, temperature: opt})}>{opt}</div>
+                        <div key={opt} className={`chip ${formData.temperature === opt ? 'active dark' : ''}`} style={{ justifyContent: 'center', padding: '10px 4px', textAlign: 'center' }} onClick={() => setFormData({...formData, temperature: opt})}>{opt}</div>
                       ))}
                     </div>
-
                     <div style={{ display: 'flex', gap: '12px' }}>
-                      <div style={{ flex: 1 }}>
-                        <span className="chip-label">HS code</span>
-                        <input type="text" className="figma-input" placeholder="3402.20.90" value={formData.hsCode} onChange={(e) => setFormData({...formData, hsCode: e.target.value})}/>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <span className="chip-label">ADR class</span>
-                        <input type="text" className="figma-input" placeholder="Not applicable" value={formData.adrClass} onChange={(e) => setFormData({...formData, adrClass: e.target.value})}/>
-                      </div>
+                      <div style={{ flex: 1 }}><span className="chip-label">HS code</span><input type="text" className="figma-input" placeholder="3402.20.90" value={formData.hsCode} onChange={(e) => setFormData({...formData, hsCode: e.target.value})}/></div>
+                      <div style={{ flex: 1 }}><span className="chip-label">ADR class</span><input type="text" className="figma-input" placeholder="Not applicable" value={formData.adrClass} onChange={(e) => setFormData({...formData, adrClass: e.target.value})}/></div>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* АВТО-КАЛЬКУЛЯТОР СПРАВА */}
-              <div className="step-aside-widget">
-                <div className="calc-widget-dark">
-                  <div className="calc-widget-title">Auto Calculation</div>
-                  
-                  <div className="calc-row">
-                    <span className="calc-label">Total mass</span>
-                    <div className="calc-value">
-                      <div className="calc-val-main">{totalMass.toFixed(2)} t</div>
-                      <div className="calc-val-sub">{totalItems} × {(totalMass/Math.max(1, totalItems)).toFixed(3)} t</div>
-                    </div>
-                  </div>
-
-                  <div className="calc-row">
-                    <span className="calc-label">Total volume</span>
-                    <div className="calc-value">
-                      <div className="calc-val-main">{totalVolume.toFixed(2)} m³</div>
-                    </div>
-                  </div>
-
-                  <div className="calc-row">
-                    <span className="calc-label">Loading metres</span>
-                    <div className="calc-value">
-                      <div className="calc-val-main">{ldm} LDM</div>
-                      <div className="calc-val-sub">{formData.stackability.toLowerCase()}</div>
-                    </div>
-                  </div>
-
-                  <div className="calc-row">
-                    <span className="calc-label">Floor footprint</span>
-                    <div className="calc-value">
-                      <div className="calc-val-main">{floorFootprint.toFixed(2)} m²</div>
-                    </div>
-                  </div>
-
-                  <div className="calc-info-box">
-                    ℹ Fits a standard 13.6 LDM tautliner trailer with {(13.6 - parseFloat(ldm)).toFixed(1)} LDM to spare.
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* STEP 4: VEHICLE */}
             <div className={`step-row ${isSubmitted ? 'step-disabled' : ''}`}>
               <div className="step-main-card">
-                <div className="step-title-row">
-                  <div>
-                    <h2>Vehicle type</h2>
-                  </div>
-                  <span className="step-count">Step 4 of 6</span>
-                </div>
-                
-                <p style={{ fontSize: '14px', color: '#5C6470', marginBottom: '16px' }}>Based on your cargo, we chose this variants on vehicle for you:</p>
+                <div className="step-title-row"><h2>Vehicle type</h2><span className="step-count">Step 4 of 6</span></div>
+                <p style={{ fontSize: '14px', color: '#5C6470', marginBottom: '16px' }}>Recommended options:</p>
                 <div className="chip-group">
                   {['Tautliner trailer', 'Mega trailer'].map(type => (
-                    <div 
-                      key={type} 
-                      className={`chip ${formData.vehicle === type ? 'active success' : ''}`}
-                      onClick={() => setFormData({...formData, vehicle: type})}
-                    >
-                      {type}
-                    </div>
+                    <div key={type} className={`chip ${formData.vehicle === type ? 'active success' : ''}`} onClick={() => setFormData({...formData, vehicle: type})}>{type}</div>
                   ))}
                 </div>
-
-                <p style={{ fontSize: '14px', color: '#5C6470', marginBottom: '16px', marginTop: '16px' }}>Variants below probably won't suit your cargo:</p>
+                <p style={{ fontSize: '14px', color: '#5C6470', marginBottom: '16px', marginTop: '16px' }}>Other variants:</p>
                 <div className="chip-group">
                   {['Box truck', 'Curtainsider', 'Container', 'Reefer'].map(type => (
-                    <div 
-                      key={type} 
-                      className={`chip ${formData.vehicle === type ? 'active' : ''}`}
-                      onClick={() => setFormData({...formData, vehicle: type})}
-                    >
-                      {type}
-                    </div>
+                    <div key={type} className={`chip ${formData.vehicle === type ? 'active' : ''}`} onClick={() => setFormData({...formData, vehicle: type})}>{type}</div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* STEP 5: PRICING */}
             <div className={`step-row ${isSubmitted ? 'step-disabled' : ''}`}>
               <div className="step-main-card">
-                <div className="step-title-row">
-                  <h2>Pricing</h2>
-                  <span className="step-count">Step 5 of 6</span>
-                </div>
+                <div className="step-title-row"><h2>Pricing</h2><span className="step-count">Step 5 of 6</span></div>
                 <div className="figma-input-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '24px', color: '#5C6470' }}>€</span>
-                  <input 
-                    type="text" 
-                    className="figma-input" 
-                    style={{ fontSize: '20px', fontWeight: 600 }}
-                    value={formData.price ? Number(formData.price.replace(/\D/g, '')).toLocaleString('en-US') : ''}
-                    placeholder="0"
-                    onChange={(e) => setFormData({...formData, price: e.target.value.replace(/\D/g, '')})}
-                  />
+                  <input type="text" className="figma-input" style={{ fontSize: '20px', fontWeight: 600 }} value={formData.price ? Number(formData.price.replace(/\D/g, '')).toLocaleString('en-US') : ''} placeholder="0" onChange={(e) => setFormData({...formData, price: e.target.value.replace(/\D/g, '')})} />
                 </div>
-                <p style={{ fontSize: '13px', color: '#888' }}>Suggested: € 1,720 — € 1,890 based on lane average.</p>
               </div>
             </div>
 
-            {/* STEP 6: REVIEW (Показываем кнопку только если не отправлено) */}
             {!isSubmitted && (
               <div className="step-row">
                 <div className="step-main-card">
                   <div className="step-title-row">
                     <div>
                       <h2>Review results</h2>
-                      <p>After hitting this button, your listing will be sent to moderator. You can check moderation status on this page.</p>
+                      <p>Button will activate only after fully completing steps 1 to 5.</p>
                     </div>
                     <span className="step-count">Step 6 of 6</span>
                   </div>
-                  <button className="btn-figma-primary" style={{ width: '100%', justifyContent: 'center', padding: '16px', fontSize: '16px' }} onClick={handleSave}>
-                    Send
-                  </button>
+                  <button className="btn-figma-primary" style={{ width: '100%', justifyContent: 'center', padding: '16px', fontSize: '16px' }} disabled={!isFormValid} onClick={handleSave}>Send to Moderation</button>
                 </div>
               </div>
             )}
 
           </div>
+
+          {/* СПРАВА: КОЛОНКА С КАРТОЙ (ТЕПЕРЬ С ОТСТУПОМ 48PX И ПОЛНЫМИ ГРАНИЦАМИ КАРТОЧКИ) */}
+          <aside className="create-right-sidebar">
+            <div className="figma-map-card">
+                <div style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, borderBottom: '1px solid #E6E8EE', background: 'white' }}>Map preview</div>
+                <div style={{ flex: 1, width: '100%', position: 'relative' }}>
+                  <RoutingMap stops={formData.stops} />
+                </div>
+            </div>
+
+            <div className="calc-widget-dark">
+                <div className="calc-widget-title">Auto Calculation</div>
+                <div className="calc-row"><span className="calc-label">Total mass</span><div className="calc-value"><div className="calc-val-main">{totalMass.toFixed(2)} t</div><div className="calc-val-sub">{totalItems} units</div></div></div>
+                <div className="calc-row"><span className="calc-label">Total volume</span><div className="calc-value"><div className="calc-val-main">{totalVolume.toFixed(2)} m³</div></div></div>
+                <div className="calc-row"><span className="calc-label">Loading metres</span><div className="calc-value"><div className="calc-val-main">{ldm} LDM</div></div></div>
+                <div className="calc-row"><span className="calc-label">Floor footprint</span><div className="calc-value"><div className="calc-val-main">{floorFootprint.toFixed(2)} m²</div></div></div>
+                <div className="calc-info-box">ℹ Fits standard 13.6 LDM tautliner layout.</div>
+            </div>
+          </aside>
+
         </div>
       </main>
     </div>

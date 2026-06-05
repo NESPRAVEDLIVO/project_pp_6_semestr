@@ -3,19 +3,13 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Фикс иконок для Leaflet в React
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-const DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
-L.Marker.prototype.options.icon = DefaultIcon;
-
 interface RoutingMapProps {
   stops: { address: string; type: string }[];
 }
 
-// 💡 БЭКЕНД-ПАЗ: Временный словарь координат. Позже бэкенд будет возвращать [lat, lng] для любого адреса.
-const CITY_COORDS: Record<string, [number, number]> = {
-  'rotterdam': [51.9225, 4.47917],
+// Локальный кэш, чтобы не спамить API одними и теми же запросами
+const GEO_CACHE: Record<string, [number, number]> = {
+  'rotterdam': [51.9225, 4.47927],
   'warsaw': [52.2297, 21.0122],
   'berlin': [52.5200, 13.4050],
   'munich': [48.1351, 11.5820],
@@ -27,47 +21,156 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'madrid': [40.4168, -3.7038]
 };
 
-// Компонент для авто-центрирования камеры
+// Функция для кастомных точек на карте вместо обычных булавок
+const getCustomDotIcon = (type: string) => {
+  let color = '#5C6470'; // Grey for intermediate stops
+  if (type === 'start') color = '#3D5AFE'; // Blue
+  if (type === 'end') color = '#00C48C'; // Green
+  
+  return L.divIcon({
+    className: 'clear-custom-icon',
+    html: `<div style="width: 14px; height: 14px; background: ${color}; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
+  });
+};
+
 const MapAutoFitter = ({ positions }: { positions: [number, number][] }) => {
   const map = useMap();
   useEffect(() => {
     if (positions.length > 0) {
       const bounds = L.latLngBounds(positions);
-      map.fitBounds(bounds, { padding: [30, 30] });
+      map.fitBounds(bounds, { padding: [40, 40] });
     } else {
-      map.setView([51.1657, 10.4515], 4); // Центр Европы по умолчанию
+      map.setView([51.1657, 10.4515], 4);
     }
   }, [positions, map]);
   return null;
 };
 
 export const RoutingMap: React.FC<RoutingMapProps> = ({ stops }) => {
-  const [positions, setPositions] = useState<[number, number][]>([]);
+  const [routeData, setRouteData] = useState<{
+    markers: { pos: [number, number], type: string }[];
+    coordinates: [number, number][];
+    distanceStr: string;
+    durationStr: string;
+  }>({ markers: [], coordinates: [], distanceStr: '', durationStr: '' });
 
   useEffect(() => {
-    const coords: [number, number][] = [];
-    stops.forEach(stop => {
-      // Ищем город по совпадению подстроки (например "Rotterdam, NL" -> 'rotterdam')
-      const match = Object.keys(CITY_COORDS).find(city => stop.address.toLowerCase().includes(city));
-      if (match) coords.push(CITY_COORDS[match]);
-    });
-    setTimeout(() => setPositions(coords), 0);
+    let isMounted = true;
+
+    const fetchRoute = async () => {
+      const validMarkers: { pos: [number, number], type: string }[] = [];
+
+      // 1. Собираем координаты для каждого введенного адреса
+      for (const stop of stops) {
+        const query = stop.address.trim().toLowerCase();
+        if (query.length < 3) continue;
+
+        const dictMatch = Object.keys(GEO_CACHE).find(city => query.includes(city));
+
+        if (dictMatch) {
+          validMarkers.push({ pos: GEO_CACHE[dictMatch], type: stop.type });
+        } else {
+          // Магия Nominatim: ищем любой город мира
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+              const pos: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+              GEO_CACHE[query] = pos; // Сохраняем в кэш
+              validMarkers.push({ pos, type: stop.type });
+            }
+          } catch {
+            console.error("Geocoding failed for", query);
+          }
+        }
+      }
+
+      if (!isMounted) return;
+
+      // 2. Строим автомобильный маршрут между точками через OSRM
+      if (validMarkers.length > 1) {
+        const coordsString = validMarkers.map(m => `${m.pos[1]},${m.pos[0]}`).join(';');
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
+        
+        try {
+          const res = await fetch(osrmUrl);
+          const data = await res.json();
+          if (data.routes && data.routes[0]) {
+            const route = data.routes[0];
+            const geojsonCoords = route.geometry.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number]);
+            
+            const distKm = (route.distance / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 });
+            const hrs = Math.floor(route.duration / 3600);
+            const mins = Math.floor((route.duration % 3600) / 60);
+            const timeStr = hrs > 0 ? `${hrs} h ${mins} min` : `${mins} min`;
+
+            if (isMounted) {
+              setRouteData({
+                markers: validMarkers,
+                coordinates: geojsonCoords,
+                distanceStr: distKm,
+                durationStr: timeStr
+              });
+            }
+          } else {
+            if (isMounted) setRouteData({ markers: validMarkers, coordinates: validMarkers.map(m => m.pos), distanceStr: '', durationStr: '' });
+          }
+        } catch {
+          if (isMounted) setRouteData({ markers: validMarkers, coordinates: validMarkers.map(m => m.pos), distanceStr: '', durationStr: '' });
+        }
+      } else {
+        if (isMounted) setRouteData({ markers: validMarkers, coordinates: [], distanceStr: '', durationStr: '' });
+      }
+    };
+
+    // Небольшая задержка, чтобы API не дергался на каждую введенную букву
+    const timeoutId = setTimeout(() => {
+      fetchRoute();
+    }, 800);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [stops]);
 
   return (
-    <div style={{ height: '220px', width: '100%', borderRadius: '0 0 12px 12px', overflow: 'hidden' }}>
-      <MapContainer center={[51.1657, 10.4515]} zoom={4} style={{ height: '100%', width: '100%' }}>
+    <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+      
+      {/* ПАРЯЩИЙ ВИДЖЕТ С ИНФОРМАЦИЕЙ О ПУТИ */}
+      {routeData.distanceStr && (
+        <div style={{
+          position: 'absolute', top: 16, right: 16, zIndex: 1000,
+          background: 'white', padding: '12px 16px', borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)', display: 'flex', gap: '16px'
+        }}>
+           <div>
+              <div style={{ fontSize: '10px', color: '#5C6470', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Distance</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: '#0E1116' }}>{routeData.distanceStr} km</div>
+           </div>
+           <div style={{ width: '1px', background: '#E6E8EE' }}></div>
+           <div>
+              <div style={{ fontSize: '10px', color: '#5C6470', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Est. Time</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: '#0E1116' }}>{routeData.durationStr}</div>
+           </div>
+        </div>
+      )}
+
+      {/* Интерактивная карта со светлой темой Voyager */}
+      <MapContainer center={[51.1657, 10.4515]} zoom={4} style={{ height: '100%', width: '100%' }} zoomControl={false}>
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; CARTO'
         />
-        {positions.map((pos, i) => (
-          <Marker key={i} position={pos} />
+        {routeData.markers.map((marker, i) => (
+          <Marker key={i} position={marker.pos} icon={getCustomDotIcon(marker.type)} />
         ))}
-        {positions.length > 1 && (
-          <Polyline positions={positions} color="#3D5AFE" weight={3} dashArray="5, 10" />
+        {routeData.coordinates.length > 0 && (
+          <Polyline positions={routeData.coordinates} color="#3D5AFE" weight={5} />
         )}
-        <MapAutoFitter positions={positions} />
+        <MapAutoFitter positions={routeData.markers.map(m => m.pos)} />
       </MapContainer>
     </div>
   );
